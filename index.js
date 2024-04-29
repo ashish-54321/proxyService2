@@ -1,12 +1,13 @@
 const http = require('http');
+const https = require('https');
 const url = require('url');
-const request = require('request');
+const cheerio = require('cheerio');
 
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
-    const parsedUrl = url.parse(req.url);
-    const targetUrl = parsedUrl.query ? parsedUrl.query.substr(4) : '';
+    const parsedUrl = url.parse(req.url, true);
+    const targetUrl = parsedUrl.query.url;
 
     if (!targetUrl) {
         res.statusCode = 400;
@@ -14,29 +15,44 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    console.log('Proxying request to:', targetUrl);
+    console.log('Fetching URL:', targetUrl);
 
-    const options = {
-        url: targetUrl,
-        headers: req.headers,
-        method: req.method
-    };
+    const protocol = targetUrl.startsWith('https') ? https : http;
 
-    request(options, (error, response, body) => {
-        if (error) {
-            console.error('Error occurred while fetching the target URL:', error);
-            res.statusCode = 500;
-            res.end('Error occurred while fetching the target URL.');
-            return;
-        }
+    protocol.get(targetUrl, (targetRes) => {
+        let html = '';
 
-        console.log('Received response from target URL:', response.statusCode);
+        targetRes.on('data', (chunk) => {
+            html += chunk;
+        });
 
-        res.writeHead(response.statusCode, response.headers);
-        res.end(body);
+        targetRes.on('end', () => {
+            // Load the HTML into Cheerio
+            const $ = cheerio.load(html);
+
+            // Manipulate the DOM using Cheerio methods
+            $('a').each((index, element) => {
+                const originalHref = $(element).attr('href');
+                // Set the href attribute to #
+                $(element).attr('href', '#');
+                // Add onclick attribute to fetch the URL via AJAX
+                $(element).attr('onclick', `fetchUrl('${originalHref}')`);
+            });
+
+            // Get the modified HTML
+            const modifiedHtml = $.html();
+
+            // Send the modified HTML back to the client
+            res.writeHead(targetRes.statusCode, targetRes.headers);
+            res.end(modifiedHtml);
+        });
+    }).on('error', (err) => {
+        console.error('Error fetching URL:', err);
+        res.statusCode = 500;
+        res.end('Error fetching URL.');
     });
 });
 
 server.listen(PORT, () => {
-    console.log(`Proxy server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
