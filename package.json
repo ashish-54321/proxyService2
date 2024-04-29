@@ -9,8 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
+ "dependencies": {
     "@types/node": "^18.0.6",
-    "http-proxy": "^1.18.1"
+    "http-proxy": "^1.18.1",
+    "request": "^2.88.2"
   }
 }
