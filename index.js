@@ -12,10 +12,10 @@ const proxy = http.createServer((req, res) => {
     path: req.url,
     method: req.method,
     // Remove headers from user request and set the Host header
-    headers: {
-      'Host': 'proxyservice2.onrender.com'
-    }
-  };
+  //   headers: {
+  //     'Host': 'proxyservice2.onrender.com'
+  //   }
+  // };
 
   const proxyReq = http.request(options, (proxyRes) => {
     // Forward the response from the target website back to the client
