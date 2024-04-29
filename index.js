@@ -1,22 +1,22 @@
 const http = require('http');
+const url = require('url');
 
 // Create a proxy server
 const proxy = http.createServer((req, res) => {
   // Log the incoming request
   console.log(`Proxying request for: ${req.url}`);
 
+  // Parse the user's request URL
+  const userUrl = url.parse(req.url);
+
   // Forward the request to the target website
   const options = {
-    hostname: 'proxyservice2.onrender.com', // Replace with the target website hostname
-    port: 10000,
-    path: req.url,
+    hostname: userUrl.hostname,
+    port: userUrl.port || 80, // Default port to 80 if not specified
+    path: userUrl.path,
     method: req.method,
     headers: req.headers
-    // Remove headers from user request and set the Host header
-  //   headers: {
-  //     'Host': 'proxyservice2.onrender.com'
-  //   }
-   };
+  };
 
   const proxyReq = http.request(options, (proxyRes) => {
     // Forward the response from the target website back to the client
@@ -40,7 +40,7 @@ const proxy = http.createServer((req, res) => {
 });
 
 // Start listening on a specific port
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 proxy.listen(PORT, () => {
   console.log(`Proxy server listening on port ${PORT}`);
 });
