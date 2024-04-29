@@ -7,13 +7,13 @@ const proxy = http.createServer((req, res) => {
 
   // Forward the request to the target website
   const options = {
-    hostname: '65ebc521-3876-4b05-ae2f-0783229f9e60-00-268y6qcut28j3.sisko.replit.dev', // Replace with the target website hostname
+    hostname: 'proxyservice2.onrender.com', // Replace with the target website hostname
     port: 80,
     path: req.url,
     method: req.method,
     // Remove headers from user request and set the Host header
     headers: {
-      'Host': '65ebc521-3876-4b05-ae2f-0783229f9e60-00-268y6qcut28j3.sisko.replit.dev'
+      'Host': 'proxyservice2.onrender.com'
     }
   };
 
