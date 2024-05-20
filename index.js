@@ -11,7 +11,7 @@ const server = http.createServer((req, res) => {
 
     if (!targetUrl) {
         res.statusCode = 400;
-        res.end('Please provide a target URL.');
+        res.end('Please provide a target URL. Like This ?url=https://(Any Target Website Url) Append In Current Url ');
         return;
     }
 
