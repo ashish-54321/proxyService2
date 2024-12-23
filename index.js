@@ -1,9 +1,11 @@
+
 const http = require('http');
 const https = require('https');
 const url = require('url');
 const cheerio = require('cheerio');
 
 const PORT = process.env.PORT || 3000;
+const baseurl = 'http://localhost:3000/?url='; // change this URL on server
 
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
@@ -11,39 +13,49 @@ const server = http.createServer((req, res) => {
 
     if (!targetUrl) {
         res.statusCode = 400;
-        res.end('Please provide a target URL. Like This ?url=https://(Any Target Website Url) Append In Current Url ');
+        res.end('Please provide a valid target URL. Example: ?url=https://example.com');
         return;
     }
 
-    console.log('Fetching URL:', targetUrl);
+    try {
+        // Validate the URL
+        const validatedUrl = new URL(targetUrl);
 
-    const protocol = targetUrl.startsWith('https') ? https : http;
+        console.log('Fetching URL:', validatedUrl.href);
 
-    const request = protocol.request(targetUrl, (targetRes) => {
-        if (targetRes.statusCode >= 300 && targetRes.statusCode < 400 && targetRes.headers.location) {
-            // Handle redirect
-            const redirectUrl = targetRes.headers.location;
-            console.log('Redirecting to:', redirectUrl);
-            // Make a new request to the redirected URL
-            http.get(redirectUrl, (redirectRes) => {
-                handleResponse(redirectRes, res);
-            }).on('error', (err) => {
-                console.error('Error fetching redirected URL:', err);
-                res.statusCode = 500;
-                res.end('Error fetching redirected URL.');
-            });
-        } else {
-            handleResponse(targetRes, res);
-        }
-    });
+        const protocol = validatedUrl.protocol === 'https:' ? https : http;
 
-    request.on('error', (err) => {
-        console.error('Error fetching URL:', err);
-        res.statusCode = 500;
-        res.end('Error fetching URL.');
-    });
+        const request = protocol.request(validatedUrl.href, (targetRes) => {
+            if (targetRes.statusCode >= 300 && targetRes.statusCode < 400 && targetRes.headers.location) {
+                // Handle redirect
+                const redirectUrl = new URL(targetRes.headers.location, validatedUrl.href).href;
+                console.log('Redirecting to:', redirectUrl);
 
-    request.end();
+                // Make a new request to the redirected URL
+                protocol.get(redirectUrl, (redirectRes) => {
+                    handleResponse(redirectRes, res);
+                }).on('error', (err) => {
+                    console.error('Error fetching redirected URL:', err);
+                    res.statusCode = 500;
+                    res.end('Error fetching redirected URL.');
+                });
+            } else {
+                handleResponse(targetRes, res);
+            }
+        });
+
+        request.on('error', (err) => {
+            console.error('Error fetching URL:', err);
+            res.statusCode = 500;
+            res.end('Error fetching URL.');
+        });
+
+        request.end();
+    } catch (error) {
+        console.error('Invalid URL:', targetUrl);
+        res.statusCode = 400;
+        res.end('Invalid URL provided.');
+    }
 });
 
 function handleResponse(targetRes, res) {
@@ -60,10 +72,10 @@ function handleResponse(targetRes, res) {
         // Manipulate the DOM using Cheerio methods
         $('a').each((index, element) => {
             const originalHref = $(element).attr('href');
-            // Set the href attribute to #
-            $(element).attr('href', '#');
-            // Add onclick attribute to fetch the URL via AJAX
-            $(element).attr('onclick', `fetchUrl('${originalHref}')`);
+            if (originalHref) {
+                $(element).attr('href', `${baseurl}${originalHref}`);
+                $(element).attr('onclick', `fetchUrl('${originalHref}')`);
+            }
         });
 
         // Get the modified HTML
