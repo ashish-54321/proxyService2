@@ -5,7 +5,7 @@ const url = require('url');
 const cheerio = require('cheerio');
 
 const PORT = process.env.PORT || 3000;
-const baseurl = 'http://localhost:3000/?url='; // change this URL on server
+const baseurl = 'https://proxyservice2.onrender.com/?url='; // change this URL on server
 
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
